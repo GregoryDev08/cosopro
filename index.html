@@ -450,7 +450,7 @@
               class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer text-slate-300 hover:bg-slate-800/80 hover:text-white"
             >
               <span class="text-base">📥</span>
-              <span id="nav-text-descargas">Centro de Descargas</span>
+              <span id="nav-text-descargas">Centro de Descargas General</span>
             </button>
           </nav>
         </div>
@@ -849,18 +849,25 @@
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Código de Auditoría <span class="text-red-500">*</span></label>
-                <input type="text" id="ef-codigo" maxlength="35" oninput="actualizarCampoFinal('codigo', this.value.toUpperCase())" onblur="actualizarCampoFinal('codigo', this.value.toUpperCase())" class="saas-input font-mono uppercase" placeholder="Ej. AUD-COSO-2026-01" />
+                <input type="text" id="ef-codigo" maxlength="35" oninput="this.value=sanitizarCodigoAuditoria(this.value); actualizarCampoFinal('codigo', this.value)" onblur="this.value=sanitizarCodigoAuditoria(this.value); actualizarCampoFinal('codigo', this.value)" class="saas-input font-mono uppercase" placeholder="Ej. AUD-COSO-2026-01" />
                 <span id="err-ef-codigo" class="field-error-msg hidden"></span>
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Auditor Responsable <span class="text-red-500">*</span></label>
-                <input type="text" id="ef-auditor" maxlength="120" oninput="actualizarCampoFinal('auditor', this.value)" onblur="actualizarCampoFinal('auditor', this.value)" class="saas-input" placeholder="Nombre del auditor o equipo auditor" />
+                <input type="text" id="ef-auditor" maxlength="120" oninput="this.value=sanitizarTextoPersona(this.value); actualizarCampoFinal('auditor', this.value)" onblur="this.value=sanitizarTextoPersona(this.value); actualizarCampoFinal('auditor', this.value)" class="saas-input" placeholder="Nombre del auditor o equipo auditor" />
                 <span id="err-ef-auditor" class="field-error-msg hidden"></span>
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Fecha de Emisión (Hoy o futura) <span class="text-red-500">*</span></label>
-                <input type="date" id="ef-fecha" onchange="validarYActualizarFechaFinal('fecha', this)" onblur="validarYActualizarFechaFinal('fecha', this)" class="saas-input" />
+                <label class="block text-xs font-bold text-slate-700 mb-1">Fecha de Auditoría (Fija) <span class="text-red-500">*</span></label>
+                <input type="date" id="ef-fecha" class="saas-input bg-slate-100 cursor-not-allowed" readonly disabled aria-readonly="true" title="La fecha de auditoría es fija y no se puede modificar." />
+                <span class="block mt-1 text-[11px] text-slate-500">Esta fecha se asigna automáticamente y no puede modificarse.</span>
                 <span id="err-ef-fecha" class="field-error-msg hidden"></span>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Fecha de Entrega de la Auditoría <span class="text-red-500">*</span></label>
+                <input type="date" id="ef-fecha-entrega" onchange="validarYActualizarFechaEntregaFinal(this)" onblur="validarYActualizarFechaEntregaFinal(this)" class="saas-input" />
+                <span class="block mt-1 text-[11px] text-slate-500">Solo se permiten fechas futuras.</span>
+                <span id="err-ef-fechaEntrega" class="field-error-msg hidden"></span>
               </div>
               <div class="md:col-span-2 lg:col-span-3">
                 <label class="block text-xs font-bold text-slate-700 mb-1">Alcance y Objetivos de la Auditoría <span class="text-red-500">*</span></label>
@@ -1019,11 +1026,11 @@
                 <div class="h-12 border-b border-dashed border-slate-400"></div>
                 <span class="block text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Auditor Líder <span class="text-red-500">*</span></span>
                 <div>
-                  <input type="text" id="ef-firma1-nombre" maxlength="120" oninput="actualizarCampoFinal('firma1Nombre', this.value)" onblur="actualizarCampoFinal('firma1Nombre', this.value)" class="saas-input text-xs" placeholder="Nombre del Auditor Líder" />
+                  <input type="text" id="ef-firma1-nombre" maxlength="120" oninput="this.value=sanitizarTextoPersona(this.value); actualizarCampoFinal('firma1Nombre', this.value)" onblur="this.value=sanitizarTextoPersona(this.value); actualizarCampoFinal('firma1Nombre', this.value)" class="saas-input text-xs" placeholder="Nombre del Auditor Líder" />
                   <span id="err-ef-firma1Nombre" class="field-error-msg hidden"></span>
                 </div>
                 <div>
-                  <input type="text" id="ef-firma1-cargo" maxlength="120" oninput="actualizarCampoFinal('firma1Cargo', this.value)" onblur="actualizarCampoFinal('firma1Cargo', this.value)" class="saas-input text-xs" placeholder="Cargo / Certificación" />
+                  <input type="text" id="ef-firma1-cargo" maxlength="120" oninput="this.value=sanitizarTextoGeneral(this.value,120); actualizarCampoFinal('firma1Cargo', this.value)" onblur="this.value=sanitizarTextoGeneral(this.value,120); actualizarCampoFinal('firma1Cargo', this.value)" class="saas-input text-xs" placeholder="Cargo / Certificación" />
                   <span id="err-ef-firma1Cargo" class="field-error-msg hidden"></span>
                 </div>
               </div>
@@ -1032,11 +1039,11 @@
                 <div class="h-12 border-b border-dashed border-slate-400"></div>
                 <span class="block text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Gerente / Director de Auditoría <span class="text-red-500">*</span></span>
                 <div>
-                  <input type="text" id="ef-firma2-nombre" maxlength="120" oninput="actualizarCampoFinal('firma2Nombre', this.value)" onblur="actualizarCampoFinal('firma2Nombre', this.value)" class="saas-input text-xs" placeholder="Nombre del Director de Auditoría" />
+                  <input type="text" id="ef-firma2-nombre" maxlength="120" oninput="this.value=sanitizarTextoPersona(this.value); actualizarCampoFinal('firma2Nombre', this.value)" onblur="this.value=sanitizarTextoPersona(this.value); actualizarCampoFinal('firma2Nombre', this.value)" class="saas-input text-xs" placeholder="Nombre del Director de Auditoría" />
                   <span id="err-ef-firma2Nombre" class="field-error-msg hidden"></span>
                 </div>
                 <div>
-                  <input type="text" id="ef-firma2-cargo" maxlength="120" oninput="actualizarCampoFinal('firma2Cargo', this.value)" onblur="actualizarCampoFinal('firma2Cargo', this.value)" class="saas-input text-xs" placeholder="Cargo" />
+                  <input type="text" id="ef-firma2-cargo" maxlength="120" oninput="this.value=sanitizarTextoGeneral(this.value,120); actualizarCampoFinal('firma2Cargo', this.value)" onblur="this.value=sanitizarTextoGeneral(this.value,120); actualizarCampoFinal('firma2Cargo', this.value)" class="saas-input text-xs" placeholder="Cargo" />
                   <span id="err-ef-firma2Cargo" class="field-error-msg hidden"></span>
                 </div>
               </div>
@@ -1045,11 +1052,11 @@
                 <div class="h-12 border-b border-dashed border-slate-400"></div>
                 <span class="block text-[11px] font-extrabold uppercase tracking-wider text-blue-600">Representante de la Entidad Auditada <span class="text-red-500">*</span></span>
                 <div>
-                  <input type="text" id="ef-firma3-nombre" maxlength="120" oninput="actualizarCampoFinal('firma3Nombre', this.value)" onblur="actualizarCampoFinal('firma3Nombre', this.value)" class="saas-input text-xs" placeholder="Nombre del Representante" />
+                  <input type="text" id="ef-firma3-nombre" maxlength="120" oninput="this.value=sanitizarTextoPersona(this.value); actualizarCampoFinal('firma3Nombre', this.value)" onblur="this.value=sanitizarTextoPersona(this.value); actualizarCampoFinal('firma3Nombre', this.value)" class="saas-input text-xs" placeholder="Nombre del Representante" />
                   <span id="err-ef-firma3Nombre" class="field-error-msg hidden"></span>
                 </div>
                 <div>
-                  <input type="text" id="ef-firma3-cargo" maxlength="120" oninput="actualizarCampoFinal('firma3Cargo', this.value)" onblur="actualizarCampoFinal('firma3Cargo', this.value)" class="saas-input text-xs" placeholder="Cargo / Dirección" />
+                  <input type="text" id="ef-firma3-cargo" maxlength="120" oninput="this.value=sanitizarTextoGeneral(this.value,120); actualizarCampoFinal('firma3Cargo', this.value)" onblur="this.value=sanitizarTextoGeneral(this.value,120); actualizarCampoFinal('firma3Cargo', this.value)" class="saas-input text-xs" placeholder="Cargo / Dirección" />
                   <span id="err-ef-firma3Cargo" class="field-error-msg hidden"></span>
                 </div>
               </div>
@@ -1061,65 +1068,69 @@
         <!-- VISTA 4: CENTRO DE DESCARGAS Y PLANTILLAS                       -->
         <!-- =============================================================== -->
         <section id="view-descargas" class="workspace-view hidden space-y-6">
-          <!-- Paquete Completo y Entregable Final -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-sm flex flex-col justify-between gap-4">
+          <!-- Centro de Descargas General -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
               <div>
-                <span class="inline-block font-mono text-[11px] font-bold bg-blue-600 text-white px-2.5 py-0.5 rounded">
-                  EXPEDIENTE MAESTRO COSO 2013
-                </span>
-                <h2 class="text-lg font-extrabold mt-2">Paquete Completo de Auditoría</h2>
-                <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                  Incluye el Resumen Ejecutivo con fórmulas dinámicas, el Entregable Final (PT-COSO-FINAL), los 5 Componentes y los 17 Principios en un solo archivo.
+                <span class="inline-block font-mono text-[11px] font-bold bg-blue-600 text-white px-2.5 py-0.5 rounded">CENTRO GENERAL</span>
+                <h2 class="text-xl font-extrabold text-slate-900 mt-2">Centro de Descargas General</h2>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Descargue desde un solo lugar todos los entregables, cédulas, respaldos y formatos disponibles de la auditoría COSO.
                 </p>
               </div>
-              <div class="flex flex-wrap items-center gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onclick="exportarTodoPDF()"
-                  class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-slate-900 text-xs font-extrabold px-4 py-2.5 rounded-xl transition cursor-pointer"
-                >
-                  <span>📄</span>
-                  <span>Descargar Paquete Completo (PDF)</span>
-                </button>
-                <button
-                  type="button"
-                  onclick="exportarTodoExcel()"
-                  class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition cursor-pointer"
-                >
-                  <span>📗</span>
-                  <span>Descargar Libro Maestro (Excel)</span>
-                </button>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <button type="button" onclick="exportarTodoPDF()" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"><span>📄</span><span>Descarga General PDF</span></button>
+                <button type="button" onclick="exportarTodoExcel()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"><span>📗</span><span>Descarga General Excel</span></button>
+                <button type="button" onclick="exportarRespaldoJSON()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"><span>🗂️</span><span>Respaldo JSON</span></button>
               </div>
             </div>
 
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col justify-between gap-4">
-              <div>
-                <span class="inline-block font-mono text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded">
-                  PT-COSO-FINAL
-                </span>
-                <h2 class="text-lg font-extrabold text-slate-900 mt-2">Entregable Final de Auditoría</h2>
-                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Informe Ejecutivo de Control Interno con identificación, matriz consolidada automática, dictamen profesional, hallazgos y firmas.
-                </p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-sm flex flex-col justify-between gap-4">
+                <div>
+                  <span class="inline-block font-mono text-[11px] font-bold bg-blue-600 text-white px-2.5 py-0.5 rounded">
+                    EXPEDIENTE MAESTRO COSO 2013
+                  </span>
+                  <h3 class="text-lg font-extrabold mt-2">Paquete Completo de Auditoría</h3>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    Incluye el Resumen Ejecutivo con fórmulas dinámicas, el Entregable Final (PT-COSO-FINAL), los 5 Componentes y los 17 Principios.
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5 pt-2">
+                  <button type="button" onclick="exportarTodoPDF()" class="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-slate-900 text-xs font-extrabold px-4 py-2.5 rounded-xl transition cursor-pointer"><span>📄</span><span>PDF Completo</span></button>
+                  <button type="button" onclick="exportarTodoExcel()" class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition cursor-pointer"><span>📗</span><span>Excel Maestro</span></button>
+                </div>
               </div>
-              <div class="flex flex-wrap items-center gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onclick="exportarEntregablePDF()"
-                  class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"
-                >
-                  <span>📄</span>
-                  <span>Descargar Entregable (PDF)</span>
-                </button>
-                <button
-                  type="button"
-                  onclick="exportarEntregableExcel()"
-                  class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"
-                >
-                  <span>📗</span>
-                  <span>Descargar Entregable (Excel)</span>
-                </button>
+
+              <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs flex flex-col justify-between gap-4">
+                <div>
+                  <span class="inline-block font-mono text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded">
+                    PT-COSO-FINAL
+                  </span>
+                  <h3 class="text-lg font-extrabold text-slate-900 mt-2">Entregable Final de Auditoría</h3>
+                  <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Informe Ejecutivo con identificación, fechas validadas, matriz consolidada, dictamen, hallazgos y firmas.
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5 pt-2">
+                  <button type="button" onclick="exportarEntregablePDF()" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"><span>📄</span><span>PDF</span></button>
+                  <button type="button" onclick="exportarEntregableExcel()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"><span>📗</span><span>Excel</span></button>
+                </div>
+              </div>
+
+              <div class="bg-blue-50 rounded-2xl border border-blue-200 p-6 shadow-2xs flex flex-col justify-between gap-4">
+                <div>
+                  <span class="inline-block font-mono text-[11px] font-bold bg-white text-blue-700 px-2.5 py-0.5 rounded border border-blue-200">
+                    RESPALDO GENERAL
+                  </span>
+                  <h3 class="text-lg font-extrabold text-slate-900 mt-2">Respaldo de Datos</h3>
+                  <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Exporte toda la información capturada en un archivo JSON para respaldo, trazabilidad o migración.
+                  </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5 pt-2">
+                  <button type="button" onclick="exportarRespaldoJSON()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer"><span>🗂️</span><span>Descargar JSON</span></button>
+                </div>
               </div>
             </div>
           </div>
@@ -1235,7 +1246,7 @@
         navDashboard: 'Panel General',
         navComponents: 'Componentes (5 / 17)',
         navFinal: 'Entregable Final',
-        navDownloads: 'Centro de Descargas',
+        navDownloads: 'Centro de Descargas General',
         navQuick: 'Acceso Rápido COSO',
         autosaveActive: 'Guardado automático activo',
         autosaveSaved: 'Guardado localmente',
@@ -1261,7 +1272,7 @@
         viewComponentsSub: 'Cédulas de trabajo interactivas para los 5 Componentes y 17 Principios COSO',
         viewFinalTitle: 'Entregable Final de Auditoría (PT-COSO-FINAL)',
         viewFinalSub: 'Informe ejecutivo consolidado, dictamen de control interno y plan de acción',
-        viewDownloadsTitle: 'Centro de Descargas y Plantillas',
+        viewDownloadsTitle: 'Centro de Descargas General',
         viewDownloadsSub: 'Exportación individual o agrupada en formatos PDF y Excel (.xlsx)',
         kpiMaturity: 'Madurez Global',
         kpiMaturityPending: 'Pendiente de evaluación',
@@ -1358,7 +1369,7 @@
         navDashboard: 'Dashboard Overview',
         navComponents: 'Components (5 / 17)',
         navFinal: 'Final Deliverable',
-        navDownloads: 'Download Center',
+        navDownloads: 'General Download Center',
         navQuick: 'COSO Quick Access',
         autosaveActive: 'Auto-save active',
         autosaveSaved: 'Saved locally',
@@ -1384,7 +1395,7 @@
         viewComponentsSub: 'Interactive audit working papers for all 5 Components and 17 COSO Principles',
         viewFinalTitle: 'Final Audit Deliverable (PT-COSO-FINAL)',
         viewFinalSub: 'Consolidated executive report, internal control opinion, and action plan',
-        viewDownloadsTitle: 'Downloads & Templates Center',
+        viewDownloadsTitle: 'General Download Center',
         viewDownloadsSub: 'Individual or bundled export in PDF and Excel (.xlsx) formats',
         kpiMaturity: 'Global Maturity',
         kpiMaturityPending: 'Pending evaluation',
@@ -1481,7 +1492,7 @@
         navDashboard: 'Painel Geral',
         navComponents: 'Componentes (5 / 17)',
         navFinal: 'Entregável Final',
-        navDownloads: 'Centro de Downloads',
+        navDownloads: 'Centro Geral de Downloads',
         navQuick: 'Acesso Rápido COSO',
         autosaveActive: 'Salvamento automático ativo',
         autosaveSaved: 'Salvo localmente',
@@ -1507,7 +1518,7 @@
         viewComponentsSub: 'Papéis de trabalho interativos para os 5 Componentes e 17 Princípios COSO',
         viewFinalTitle: 'Entregável Final de Auditoria (PT-COSO-FINAL)',
         viewFinalSub: 'Relatório executivo consolidado, parecer de controle interno e plano de ação',
-        viewDownloadsTitle: 'Centro de Downloads e Modelos',
+        viewDownloadsTitle: 'Centro Geral de Downloads',
         viewDownloadsSub: 'Exportação individual ou agrupada nos formatos PDF e Excel (.xlsx)',
         kpiMaturity: 'Maturidade Global',
         kpiMaturityPending: 'Pendente de avaliação',
@@ -1604,7 +1615,7 @@
         navDashboard: 'Tableau de Bord',
         navComponents: 'Composants (5 / 17)',
         navFinal: 'Livrable Final',
-        navDownloads: 'Centre de Téléchargement',
+        navDownloads: 'Centre Général de Téléchargement',
         navQuick: 'Accès Rapide COSO',
         autosaveActive: 'Sauvegarde auto active',
         autosaveSaved: 'Enregistré localement',
@@ -1630,7 +1641,7 @@
         viewComponentsSub: 'Feuilles de travail interactives pour les 5 Composants et 17 Principes COSO',
         viewFinalTitle: 'Livrable Final d’Audit (PT-COSO-FINAL)',
         viewFinalSub: 'Rapport exécutif consolidé, opinion de contrôle interne et plan d’action',
-        viewDownloadsTitle: 'Centre de Téléchargement et Modèles',
+        viewDownloadsTitle: 'Centre Général de Téléchargement',
         viewDownloadsSub: 'Exportation individuelle ou groupée aux formats PDF et Excel (.xlsx)',
         kpiMaturity: 'Maturité Globale',
         kpiMaturityPending: 'En attente d’évaluation',
@@ -3279,6 +3290,7 @@
         codigo: '',
         auditor: '',
         fecha: '',
+        fechaEntrega: '',
         alcance: '',
         dictamen: '',
         conclusionEjecutiva: '',
@@ -3359,6 +3371,7 @@
               codigo: '',
               auditor: '',
               fecha: hoy,
+              fechaEntrega: '',
               alcance: '',
               dictamen: '',
               conclusionEjecutiva: '',
@@ -3386,6 +3399,7 @@
               codigo: 'AUD-COSO-2026-01',
               auditor: 'Equipo de Auditoría de Sistemas y Control Interno',
               fecha: hoy,
+              fechaEntrega: sumarDiasISO(15),
               alcance:
                 'Evaluación integral del diseño, implementación y eficacia operativa del Sistema de Control Interno bajo los 5 componentes y 17 principios del Marco Integrado COSO (2013), abarcando los procesos financieros críticos y controles generales de TI (ITGC).',
               dictamen: 'Efectivo con Oportunidades de Mejora',
@@ -3459,12 +3473,16 @@
           const parsed = JSON.parse(raw);
           if (parsed && parsed.principlesData && parsed.finalReport) {
             const hoy = obtenerFechaHoyISO();
-            if (parsed.finalReport.fecha && parsed.finalReport.fecha < hoy) {
+            // La fecha de auditoría es fija: se conserva si es válida; solo se asigna hoy si falta o es inválida.
+            if (!parsed.finalReport.fecha || !/^\d{4}-\d{2}-\d{2}$/.test(parsed.finalReport.fecha)) {
               parsed.finalReport.fecha = hoy;
+            }
+            if (typeof parsed.finalReport.fechaEntrega !== 'string') {
+              parsed.finalReport.fechaEntrega = '';
             }
             if (Array.isArray(parsed.finalReport.findings)) {
               parsed.finalReport.findings.forEach((f) => {
-                if (f.fechaCompromiso && f.fechaCompromiso < hoy) {
+                if (f.fechaCompromiso && /^\d{4}-\d{2}-\d{2}$/.test(f.fechaCompromiso) && f.fechaCompromiso < hoy) {
                   f.fechaCompromiso = hoy;
                 }
               });
@@ -3485,6 +3503,24 @@
       appState.theme = prefersDark ? 'dark' : 'light';
       document.documentElement.lang = appState.lang;
       aplicarTemaDOM();
+    }
+
+    function sanitizarTextoPersona(valor) {
+      return (valor || '')
+        .replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.,\-]/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .slice(0, 120);
+    }
+
+    function sanitizarCodigoAuditoria(valor) {
+      return (valor || '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9\-_/]/g, '')
+        .slice(0, 35);
+    }
+
+    function sanitizarTextoGeneral(valor, maxLen = 200) {
+      return (valor || '').replace(/\s{2,}/g, ' ').slice(0, maxLen);
     }
 
     function validarFechaNoAntigua(valor, etiqueta, fechaMinimaExtra = null) {
@@ -3509,6 +3545,33 @@
         return {
           valid: false,
           msg: `${etiqueta}: la fecha debe ser igual o posterior a ${fechaMinimaExtra}.`
+        };
+      }
+      if (clean > maxFecha) {
+        return {
+          valid: false,
+          msg: `${etiqueta}: la fecha excede el horizonte máximo permitido (${maxFecha}).`
+        };
+      }
+      return { valid: true, msg: '' };
+    }
+
+    function validarFechaFutura(valor, etiqueta) {
+      const clean = (valor || '').trim();
+      const hoy = obtenerFechaHoyISO();
+      const maxYear = new Date().getFullYear() + 5;
+      const maxFecha = `${maxYear}-12-31`;
+
+      if (!clean || !/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+        return {
+          valid: false,
+          msg: `${etiqueta}: seleccione una fecha válida (AAAA-MM-DD).`
+        };
+      }
+      if (clean <= hoy) {
+        return {
+          valid: false,
+          msg: `${etiqueta}: solo se permiten fechas futuras (posteriores a ${hoy}).`
         };
       }
       if (clean > maxFecha) {
@@ -3666,8 +3729,9 @@
         ['area', validarTexto(ef.area, 'Proceso o Sistema Evaluado', 5, 200)],
         ['periodo', validarPeriodo(ef.periodo)],
         ['codigo', validarCodigoAuditoria(ef.codigo)],
-        ['auditor', validarTexto(ef.auditor, 'Auditor Responsable', 3, 120)],
-        ['fecha', validarFechaNoAntigua(ef.fecha, 'Fecha de Emisión')],
+        ['auditor', validarNombrePersona(ef.auditor, 'Auditor Responsable')],
+        ['fecha', validarTexto(ef.fecha, 'Fecha de Auditoría', 10, 10, /^\d{4}-\d{2}-\d{2}$/, 'use formato AAAA-MM-DD.')],
+        ['fechaEntrega', validarFechaFutura(ef.fechaEntrega, 'Fecha de Entrega de la Auditoría')],
         ['alcance', validarTexto(ef.alcance, 'Alcance y Objetivos', 15, 1000)],
         ['conclusionEjecutiva', validarTexto(ef.conclusionEjecutiva, 'Conclusión Ejecutiva del Dictamen', 20, 2000)],
         ['firma1Nombre', validarNombrePersona(ef.firma1Nombre, 'Firma Auditor Líder (Nombre)')],
@@ -3746,6 +3810,7 @@
         codigo: 'ef-codigo',
         auditor: 'ef-auditor',
         fecha: 'ef-fecha',
+        fechaEntrega: 'ef-fecha-entrega',
         alcance: 'ef-alcance',
         conclusionEjecutiva: 'ef-conclusion-ejecutiva',
         firma1Nombre: 'ef-firma1-nombre',
@@ -4813,7 +4878,7 @@
                           <textarea rows="2" maxlength="600" oninput="actualizarCriterioPrincipio(${pObj.num}, ${idx}, 'observation', this.value)" onblur="renderizarTodo()" class="saas-input text-xs ${errMap.observation ? 'saas-input-error' : ''}">${crit.observation || ''}</textarea>
                         </td>
                         <td class="p-2 align-top">
-                          <input type="text" maxlength="120" oninput="actualizarCriterioPrincipio(${pObj.num}, ${idx}, 'responsible', this.value)" onblur="renderizarTodo()" class="saas-input text-xs ${errMap.responsible ? 'saas-input-error' : ''}" value="${crit.responsible || ''}" />
+                          <input type="text" maxlength="120" oninput="this.value=sanitizarTextoGeneral(this.value,120); actualizarCriterioPrincipio(${pObj.num}, ${idx}, 'responsible', this.value)" onblur="renderizarTodo()" class="saas-input text-xs ${errMap.responsible ? 'saas-input-error' : ''}" value="${crit.responsible || ''}" />
                         </td>
                         <td class="p-2 text-center align-top pt-3">
                           <button
@@ -4982,6 +5047,7 @@
     function renderizarEntregableFinal(metrics) {
       const ef = appState.finalReport;
       const hoy = obtenerFechaHoyISO();
+      const maxFecha = `${new Date().getFullYear() + 5}-12-31`;
 
       document.getElementById('ef-entidad').value = ef.entidad || '';
       document.getElementById('ef-area').value = ef.area || '';
@@ -4989,8 +5055,16 @@
       document.getElementById('ef-codigo').value = ef.codigo || '';
       document.getElementById('ef-auditor').value = ef.auditor || '';
       const fechaEl = document.getElementById('ef-fecha');
-      fechaEl.min = hoy;
-      fechaEl.value = ef.fecha || '';
+      fechaEl.value = ef.fecha || hoy;
+      if (!ef.fecha) {
+        appState.finalReport.fecha = hoy;
+      }
+      const fechaEntregaEl = document.getElementById('ef-fecha-entrega');
+      if (fechaEntregaEl) {
+        fechaEntregaEl.min = sumarDiasISO(1);
+        fechaEntregaEl.max = maxFecha;
+        fechaEntregaEl.value = ef.fechaEntrega || '';
+      }
       document.getElementById('ef-alcance').value = ef.alcance || '';
       document.getElementById('ef-conclusion-ejecutiva').value = ef.conclusionEjecutiva || '';
 
@@ -5108,11 +5182,11 @@
               ${fErr.recomendacion ? `<span class="field-error-msg">⚠️ Mín. 10 caracteres</span>` : ''}
             </td>
             <td class="p-2 align-top">
-              <input type="text" maxlength="120" oninput="actualizarHallazgoFinal(${idx}, 'responsable', this.value)" onblur="renderizarTodo()" class="saas-input text-xs ${fErr.responsable ? 'saas-input-error' : ''}" value="${f.responsable || ''}" placeholder="Área / Cargo" />
+              <input type="text" maxlength="120" oninput="this.value=sanitizarTextoPersona(this.value); actualizarHallazgoFinal(${idx}, 'responsable', this.value)" onblur="renderizarTodo()" class="saas-input text-xs ${fErr.responsable ? 'saas-input-error' : ''}" value="${f.responsable || ''}" placeholder="Área / Cargo" />
               ${fErr.responsable ? `<span class="field-error-msg">⚠️ Obligatorio</span>` : ''}
             </td>
             <td class="p-2 align-top">
-              <input type="date" min="${minCompromiso}" onchange="validarYActualizarFechaHallazgo(${idx}, this)" onblur="validarYActualizarFechaHallazgo(${idx}, this)" class="saas-input text-xs ${fErr.fechaCompromiso ? 'saas-input-error' : ''}" value="${f.fechaCompromiso || ''}" />
+              <input type="date" min="${minCompromiso}" max="${maxFecha}" onchange="validarYActualizarFechaHallazgo(${idx}, this)" onblur="validarYActualizarFechaHallazgo(${idx}, this)" class="saas-input text-xs ${fErr.fechaCompromiso ? 'saas-input-error' : ''}" value="${f.fechaCompromiso || ''}" />
               ${fErr.fechaCompromiso ? `<span class="field-error-msg">⚠️ Fecha vigente req.</span>` : ''}
             </td>
             <td class="p-2 text-center align-top pt-3">
@@ -5142,39 +5216,50 @@
     }
 
     function actualizarCampoFinal(field, value) {
+      if (field === 'fecha') {
+        mostrarToast('La fecha de auditoría es fija y no se puede modificar.', 'warning');
+        aplicarErroresInlineEntregable();
+        return;
+      }
+      if (field === 'fechaEntrega') {
+        const res = validarFechaFutura(value, 'Fecha de Entrega de la Auditoría');
+        if ((value || '').trim() && !res.valid) {
+          mostrarToast(res.msg, 'warning');
+        }
+      }
       appState.finalReport[field] = value;
       guardarEstado();
       aplicarErroresInlineEntregable();
       actualizarIndicadorValidacionGlobal();
     }
 
-    function validarYActualizarFechaFinal(field, inputEl) {
+    function validarYActualizarFechaEntregaFinal(inputEl) {
       const val = (inputEl.value || '').trim();
-      const hoy = obtenerFechaHoyISO();
+      const minFutura = sumarDiasISO(1);
+
       if (!val) {
-        appState.finalReport[field] = '';
+        appState.finalReport.fechaEntrega = '';
         guardarEstado();
         aplicarErroresInlineEntregable();
         actualizarIndicadorValidacionGlobal();
         return;
       }
-      const res = validarFechaNoAntigua(val, 'Fecha de Emisión');
+
+      const res = validarFechaFutura(val, 'Fecha de Entrega de la Auditoría');
       if (!res.valid) {
-        inputEl.value = hoy;
-        appState.finalReport[field] = hoy;
+        inputEl.value = '';
+        appState.finalReport.fechaEntrega = '';
         guardarEstado();
+        aplicarErroresInlineEntregable();
+        actualizarIndicadorValidacionGlobal();
         mostrarToast(res.msg, 'warning');
-      } else {
-        appState.finalReport[field] = val;
-        // Verificar que ninguna fecha de compromiso quede anterior a la nueva fecha de emisión
-        (appState.finalReport.findings || []).forEach((f) => {
-          if (f.fechaCompromiso && f.fechaCompromiso < val) {
-            f.fechaCompromiso = val;
-          }
-        });
-        guardarEstado();
+        return;
       }
-      renderizarTodo();
+
+      appState.finalReport.fechaEntrega = val;
+      guardarEstado();
+      aplicarErroresInlineEntregable();
+      actualizarIndicadorValidacionGlobal();
     }
 
     function validarYActualizarFechaHallazgo(idx, inputEl) {
@@ -5459,7 +5544,8 @@
         ['1. IDENTIFICACIÓN GENERAL DE LA AUDITORÍA'],
         ['Entidad Auditada:', ef.entidad || '', 'Código de Auditoría:', ef.codigo || ''],
         ['Área / Sistema:', ef.area || '', 'Período Evaluado:', ef.periodo || ''],
-        ['Auditor Responsable:', ef.auditor || '', 'Fecha de Emisión:', ef.fecha || ''],
+        ['Auditor Responsable:', ef.auditor || '', 'Fecha de Auditoría (Fija):', ef.fecha || ''],
+        ['Fecha de Entrega de la Auditoría:', ef.fechaEntrega || '', '', ''],
         ['Alcance y Objetivos:', ef.alcance || ''],
         [],
         ['2. MATRIZ CONSOLIDADA DE LOS 5 COMPONENTES COSO'],
@@ -5481,10 +5567,10 @@
       aoa.push([
         'GLOBAL',
         'Promedio / Total Consolidado',
-        { f: 'SUM(C11:C15)' },
-        { f: 'SUM(D11:D15)' },
-        { f: 'SUM(E11:E15)' },
-        { f: 'IFERROR(AVERAGEIF(F11:F15,">0"),0)' },
+        { f: 'SUM(C12:C16)' },
+        { f: 'SUM(D12:D16)' },
+        { f: 'SUM(E12:E16)' },
+        { f: 'IFERROR(AVERAGEIF(F12:F16,">0"),0)' },
         ef.dictamen || metrics.dictamenAutomatico
       ]);
 
@@ -5608,6 +5694,31 @@
       const filename = `${comp.ptCode}_${comp.sheetName}_${suffix}.xlsx`;
       XLSX.writeFile(wb, filename);
       mostrarToast(`Excel del componente descargado: ${filename}`, 'success');
+    }
+
+    function exportarRespaldoJSON() {
+      try {
+        const payload = {
+          exportedAt: new Date().toISOString(),
+          application: 'AuditCOSO Pro',
+          version: '1.0',
+          data: appState
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const codigo = (appState.finalReport?.codigo || 'AUDITORIA').replace(/[^A-Za-z0-9_-]/g, '_');
+        a.href = url;
+        a.download = `${codigo}_Respaldo_General.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        mostrarToast('Respaldo JSON descargado correctamente.', 'success');
+      } catch (e) {
+        console.error(e);
+        mostrarToast('No se pudo generar el respaldo JSON.', 'warning');
+      }
     }
 
     function exportarEntregableExcel() {
@@ -5757,7 +5868,8 @@
               <div><strong>Área o Sistema Evaluado:</strong>${boxHTML(ef.area)}</div>
               <div><strong>Código de Auditoría:</strong>${boxHTML(ef.codigo)}</div>
               <div><strong>Auditor Responsable:</strong>${boxHTML(ef.auditor)}</div>
-              <div><strong>Fecha de Emisión:</strong>${boxHTML(ef.fecha)}</div>
+              <div><strong>Fecha de Auditoría (Fija):</strong>${boxHTML(ef.fecha)}</div>
+              <div><strong>Fecha de Entrega de la Auditoría:</strong>${boxHTML(ef.fechaEntrega)}</div>
               <div style="grid-column: span 2;"><strong>Alcance y Objetivos:</strong>${boxHTML(ef.alcance, true)}</div>
             </div>
           </div>
