@@ -42,6 +42,16 @@ body {
   line-height: 1.25;
 }
 
+.evidence-attachment {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 13rem;
+}
+
+.evidence-attachment-name {
+  overflow-wrap: anywhere;
+}
+
 /* =================================================================== */
 /* MODO OSCURO EJECUTIVO (html.dark)                                   */
 /* =================================================================== */

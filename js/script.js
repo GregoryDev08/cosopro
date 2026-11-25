@@ -1119,6 +1119,24 @@ function obtenerFechaHoyISO() {
   return `${y}-${m}-${d}`;
 }
 
+function obtenerPeriodosDisponibles() {
+  const now = new Date();
+  const fechaInicio = new Date(now.getFullYear(), now.getMonth(), 1);
+  const locale = { es: 'es', en: 'en', pt: 'pt', fr: 'fr' }[appState.lang] || 'es';
+  const formatter = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+
+  return Array.from({ length: 61 }, (_, offset) => {
+    const fecha = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + offset, 1);
+    const value = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+    const label = formatter.format(fecha);
+    return { value, label: label.charAt(0).toLocaleUpperCase(locale) + label.slice(1) };
+  });
+}
+
+function obtenerEtiquetaPeriodo(valor) {
+  return obtenerPeriodosDisponibles().find((periodo) => periodo.value === valor)?.label || valor || '';
+}
+
 function sumarDiasISO(dias) {
   const dt = new Date();
   dt.setDate(dt.getDate() + dias);
@@ -1135,6 +1153,25 @@ function escapeHTML(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function obtenerEvidenciaConAdjunto(row) {
+  const referencia = row.archivoEvidencia?.name
+    ? `Archivo adjunto: ${row.archivoEvidencia.name}`
+    : '';
+  return [row.evidencia || '', referencia].filter(Boolean).join('\n');
+}
+
+function obtenerTamanoAdjuntos() {
+  return Object.values(appState.principlesData).reduce(
+    (total, principle) =>
+      total +
+      (principle.criteria || []).reduce(
+        (subtotal, row) => subtotal + (Number(row.archivoEvidencia?.size) || 0),
+        0
+      ),
+    0
+  );
 }
 
 function t(key) {
@@ -1536,6 +1573,7 @@ function crearEstadoPorModo(modo) {
               criterio: '',
               procedimiento: '',
               evidencia: '',
+              archivoEvidencia: null,
               estado: '',
               hallazgo: '',
               responsable: ''
@@ -1550,7 +1588,7 @@ function crearEstadoPorModo(modo) {
           maturity: hasPartial ? 3 : 4,
           conclusion: p.sampleConclusion,
           recommendation: p.sampleRecommendation,
-          criteria: p.sampleCriteria.map((c) => ({ ...c }))
+          criteria: p.sampleCriteria.map((c) => ({ ...c, archivoEvidencia: null }))
         };
       }
     });
@@ -1589,7 +1627,7 @@ function crearEstadoPorModo(modo) {
       : {
           entidad: 'Corporación Tecnológica Andina S.A.',
           area: 'Dirección de Tecnologías de la Información y Sistema ERP Financiero',
-          periodo: 'Enero 2026 - Diciembre 2026',
+          periodo: obtenerPeriodosDisponibles()[0].value,
           codigo: 'AUD-COSO-2026-01',
           auditor: 'Equipo de Auditoría de Sistemas y Control Interno',
           fecha: hoy,
@@ -1695,8 +1733,10 @@ function guardarEstado() {
     if (statusEl) {
       statusEl.textContent = `${t('autosaveSaved')} • ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
+    return true;
   } catch (e) {
     console.warn('Error guardando en localStorage:', e);
+    return false;
   }
 }
 
@@ -1755,14 +1795,13 @@ function validarNombrePersona(valor, etiqueta) {
 }
 
 function validarPeriodo(valor) {
-  return validarTexto(
-    valor,
-    'Período Evaluado',
-    4,
-    100,
-    /^(?=.*\d)[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-/.,()]+$/,
-    'debe incluir al menos el año o referencia temporal válida (ej. Enero 2026 - Diciembre 2026).'
-  );
+  if (!obtenerPeriodosDisponibles().some((periodo) => periodo.value === valor)) {
+    return {
+      valid: false,
+      msg: 'Período Evaluado: seleccione un mes disponible desde el mes actual en adelante (máximo cinco años).'
+    };
+  }
+  return { valid: true, msg: '' };
 }
 
 function validarFechaEntregaNoAntigua(valor) {
@@ -2782,6 +2821,27 @@ function renderizarVistaComponentes() {
             class="saas-input text-xs"
             placeholder="Documento, log o acta revisada..."
           >${escapeHTML(row.evidencia)}</textarea>
+          <div class="evidence-attachment mt-2">
+            <label class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-blue-700 cursor-pointer">
+              <span>📎 Adjuntar evidencia</span>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp"
+                onchange="actualizarAdjuntoEvidencia(${activePrin.num}, ${idx}, this)"
+                class="block w-full text-[10px] text-slate-500"
+                aria-label="Adjuntar archivo como evidencia de verificación"
+              />
+            </label>
+            ${
+              row.archivoEvidencia?.dataUrl
+                ? `<div class="flex flex-wrap items-center gap-2 text-[10px]">
+                    <span class="evidence-attachment-name text-slate-600">${escapeHTML(row.archivoEvidencia.name)}</span>
+                    <button type="button" onclick="descargarAdjuntoEvidencia(${activePrin.num}, ${idx})" class="font-bold text-blue-700 hover:underline cursor-pointer">Descargar</button>
+                    <button type="button" onclick="eliminarAdjuntoEvidencia(${activePrin.num}, ${idx})" class="font-bold text-red-600 hover:underline cursor-pointer">Quitar</button>
+                  </div>`
+                : '<span class="text-[10px] text-slate-500">Máximo 2 MB por archivo; 3 MB en total.</span>'
+            }
+          </div>
         </td>
         <td class="p-2">
           <select
@@ -3022,11 +3082,103 @@ function actualizarCriterio(pNum, idx, field, value) {
   }
 }
 
+function actualizarAdjuntoEvidencia(pNum, idx, inputEl) {
+  const file = inputEl.files?.[0];
+  if (!file) return;
+
+  const row = appState.principlesData[pNum]?.criteria?.[idx];
+  if (!row) {
+    inputEl.value = '';
+    mostrarToast('No se encontró el criterio al que se adjuntará la evidencia.', 'warning');
+    return;
+  }
+
+  const maxFileSize = 2 * 1024 * 1024;
+  const maxTotalSize = 3 * 1024 * 1024;
+  const previousAttachment = row.archivoEvidencia || null;
+  if (file.size > maxFileSize) {
+    inputEl.value = '';
+    mostrarToast('El archivo supera el límite de 2 MB por evidencia.', 'warning');
+    return;
+  }
+  if (obtenerTamanoAdjuntos() - (Number(previousAttachment?.size) || 0) + file.size > maxTotalSize) {
+    inputEl.value = '';
+    mostrarToast('Se alcanzó el límite total de 3 MB para archivos de evidencia.', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (appState.principlesData[pNum]?.criteria?.[idx] !== row) {
+      inputEl.value = '';
+      mostrarToast('El criterio cambió antes de completar la carga del archivo.', 'warning');
+      return;
+    }
+    if (typeof reader.result !== 'string' || !reader.result.startsWith('data:')) {
+      inputEl.value = '';
+      mostrarToast('No se pudo leer el archivo seleccionado.', 'warning');
+      return;
+    }
+
+    row.archivoEvidencia = {
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+      size: file.size,
+      dataUrl: reader.result
+    };
+    if (!guardarEstado()) {
+      row.archivoEvidencia = previousAttachment;
+      inputEl.value = '';
+      mostrarToast('No se pudo guardar el archivo. Libere espacio del almacenamiento local e inténtelo de nuevo.', 'warning');
+      return;
+    }
+
+    if (appState.activeView === 'componentes') renderizarVistaComponentes();
+    mostrarToast('Evidencia adjuntada y guardada localmente.', 'success');
+  };
+  reader.onerror = () => {
+    inputEl.value = '';
+    mostrarToast('Ocurrió un error al leer el archivo de evidencia.', 'warning');
+  };
+  reader.readAsDataURL(file);
+}
+
+function descargarAdjuntoEvidencia(pNum, idx) {
+  const attachment = appState.principlesData[pNum]?.criteria?.[idx]?.archivoEvidencia;
+  if (!attachment?.dataUrl || !attachment.name) {
+    mostrarToast('No se encontró el archivo adjunto para descargar.', 'warning');
+    return;
+  }
+
+  const link = document.createElement('a');
+  link.href = attachment.dataUrl;
+  link.download = attachment.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function eliminarAdjuntoEvidencia(pNum, idx) {
+  const row = appState.principlesData[pNum]?.criteria?.[idx];
+  if (!row?.archivoEvidencia) return;
+
+  const previousAttachment = row.archivoEvidencia;
+  row.archivoEvidencia = null;
+  if (!guardarEstado()) {
+    row.archivoEvidencia = previousAttachment;
+    mostrarToast('No se pudo actualizar el almacenamiento local.', 'warning');
+    return;
+  }
+  if (appState.activeView === 'componentes') renderizarVistaComponentes();
+  mostrarToast('Archivo adjunto eliminado.', 'info');
+}
+
 function agregarCriterio(pNum) {
   appState.principlesData[pNum].criteria.push({
     criterio: '',
     procedimiento: '',
     evidencia: '',
+    archivoEvidencia: null,
     estado: '',
     hallazgo: '',
     responsable: ''
@@ -3042,6 +3194,7 @@ function eliminarCriterio(pNum, idx) {
       criterio: '',
       procedimiento: '',
       evidencia: '',
+      archivoEvidencia: null,
       estado: '',
       hallazgo: '',
       responsable: ''
@@ -3068,7 +3221,12 @@ function renderizarEntregableFinal(metrics) {
 
   document.getElementById('ef-entidad').value = ef.entidad || '';
   document.getElementById('ef-area').value = ef.area || '';
-  document.getElementById('ef-periodo').value = ef.periodo || '';
+  const periodoEl = document.getElementById('ef-periodo');
+  periodoEl.replaceChildren(new Option('Seleccione un período disponible', ''));
+  obtenerPeriodosDisponibles().forEach(({ value, label }) => {
+    periodoEl.add(new Option(label, value));
+  });
+  periodoEl.value = ef.periodo || '';
   document.getElementById('ef-codigo').value = ef.codigo || '';
   document.getElementById('ef-auditor').value = ef.auditor || '';
 
@@ -3584,7 +3742,7 @@ function construirHojaPrincipioExcel(comp, p) {
       i + 1,
       row.criterio || '',
       row.procedimiento || '',
-      row.evidencia || '',
+      obtenerEvidenciaConAdjunto(row),
       row.estado || '',
       row.hallazgo || '',
       row.responsable || ''
@@ -3628,7 +3786,7 @@ function construirHojaComponenteExcel(comp) {
         i + 1,
         row.criterio || '',
         row.procedimiento || '',
-        row.evidencia || '',
+        obtenerEvidenciaConAdjunto(row),
         row.estado || '',
         row.hallazgo || '',
         row.responsable || ''
@@ -3661,7 +3819,7 @@ function construirHojaEntregableFinalExcel() {
     [],
     ['1. IDENTIFICACIÓN GENERAL DE LA AUDITORÍA'],
     ['Entidad Auditada:', ef.entidad || '', 'Código de Auditoría:', ef.codigo || ''],
-    ['Área / Sistema:', ef.area || '', 'Período Evaluado:', ef.periodo || ''],
+    ['Área / Sistema:', ef.area || '', 'Período Evaluado:', obtenerEtiquetaPeriodo(ef.periodo)],
     ['Auditor Responsable:', ef.auditor || '', 'Fecha de Auditoría (Fija Hoy):', ef.fecha || obtenerFechaHoyISO()],
     ['Fecha de Entrega de Auditoría:', ef.fechaEntrega || '', 'Alcance y Objetivos:', ef.alcance || ''],
     [],
@@ -3947,7 +4105,7 @@ function generarHTMLPrincipioPDF(comp, p) {
                 <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
                 <td>${escapeHTML(row.criterio || '') || '&nbsp;'}</td>
                 <td>${escapeHTML(row.procedimiento || '') || '&nbsp;'}</td>
-                <td>${escapeHTML(row.evidencia || '') || '&nbsp;'}</td>
+                <td>${escapeHTML(obtenerEvidenciaConAdjunto(row)).replace(/\n/g, '<br>') || '&nbsp;'}</td>
                 <td style="font-weight: 700;">${escapeHTML(row.estado || '') || '&nbsp;'}</td>
                 <td>${escapeHTML(row.hallazgo || '') || '&nbsp;'}</td>
                 <td>${escapeHTML(row.responsable || '') || '&nbsp;'}</td>
@@ -3985,7 +4143,7 @@ function generarHTMLEntregableFinalPDF() {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 9.5px;">
           <div><strong>Entidad / Organización Auditada:</strong>${boxHTML(ef.entidad)}</div>
           <div><strong>Área o Sistema Evaluado:</strong>${boxHTML(ef.area)}</div>
-          <div><strong>Período Evaluado:</strong>${boxHTML(ef.periodo)}</div>
+          <div><strong>Período Evaluado:</strong>${boxHTML(obtenerEtiquetaPeriodo(ef.periodo))}</div>
           <div><strong>Código de Auditoría:</strong>${boxHTML(ef.codigo)}</div>
           <div><strong>Auditor Responsable:</strong>${boxHTML(ef.auditor)}</div>
           <div><strong>Fecha de Auditoría (Fija Hoy):</strong>${boxHTML(ef.fecha || obtenerFechaHoyISO())}</div>

@@ -592,7 +592,9 @@
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">Período Evaluado <span class="text-red-500">*</span></label>
-                <input type="text" id="ef-periodo" maxlength="100" oninput="actualizarCampoFinal('periodo', this.value)" onblur="actualizarCampoFinal('periodo', this.value)" class="saas-input" placeholder="Ej. Enero 2026 - Diciembre 2026" />
+                <select id="ef-periodo" onchange="actualizarCampoFinal('periodo', this.value)" class="saas-input">
+                  <option value="">Seleccione un período disponible</option>
+                </select>
                 <span id="err-ef-periodo" class="field-error-msg hidden"></span>
               </div>
               <div>
